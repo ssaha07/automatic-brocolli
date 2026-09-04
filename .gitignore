@@ -1,0 +1,3 @@
+# Ignore all (with exceptions) files starting with a period.
+.*
+!.gitignore
