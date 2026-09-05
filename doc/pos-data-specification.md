@@ -31,25 +31,18 @@ packet
 title Retailer Status Data
 +16: "Catalog Version (LE)"
 +16: "POS Data Version (LE)"
-+15: "GSTIN (ASCII)"
-+17: "Products (array with sentinel, variable)"
++32: "Products (array with sentinel, variable)"
 ```
 
 ### Catalog Version
 
 The catalog version which is installed in the merchant's inventory server.
-*(2 bytes, unsigned non-zero integer)*
+*(2 bytes, little-endian, unsigned non-zero integer)*
 
 ### POS Data Version
 
 The version of this specification as displayed and expected by the POS
-terminal. *(2 bytes, unsigned non-zero integer)*
-
-### GSTIN
-
-The GSTIN uniquely identifies a retailer. This data can be further used to pull
-up information such as retailer name and address. The application may store it
-in order history for the user. *(15 ASCII characters)*
+terminal. *(2 bytes, little-endian, unsigned non-zero integer)*
 
 ### Products
 
@@ -73,7 +66,7 @@ The length is retrieved by the value in the bits, plus one.
 
 The UUID uniquely identifies the product. This is defined in the [global
 catalog](./global-catalog.md), this is a common dataset which is shared by all
-applications. *(1 to 16 bytes, variable)*
+applications. *(1 to 16 bytes, little-endian, variable)*
 
 The UUID is 16-bytes large. To reduce the size, the specification only mentions
 enough bytes from the end which can uniquely identify the UUID. There's more
@@ -83,11 +76,11 @@ versions. <!-- TODO document collision resolution -->
 #### Available Stock
 
 The available stock of the item. Zero should not be reported as then the entry
-would simply be wastage of space. *(1 to 4 bytes, variable)*
+would simply be wastage of space. *(1 to 4 bytes, little-endian, variable)*
 
 #### Selling Price
 
 The selling price is determined by the merchant. This is separate from the
 `mrp` field defined in the [global catalog](./global-catalog.md). If `mrp` is
 non-zero, then the selling price should be strictly less than or equal to
-`mrp`. *(1 to 4 bytes, variable)*
+`mrp`. *(1 to 4 bytes, little-endian, variable)*
