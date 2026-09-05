@@ -56,6 +56,7 @@
                 (python3.withPackages (
                   py: with py; [
                     qrcode
+                    wxpython
                 ]))
               ];
             }
