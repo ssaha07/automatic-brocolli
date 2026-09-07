@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
 import json
+import os
+import sys
 import wx
+
+os.chdir(os.path.dirname(sys.argv[0]))
 
 from catalog import Catalog
 from datamatrix import status_data_to_paged_matrices
