@@ -4,16 +4,14 @@ from typing import Any, Iterable, Self
 
 class Product:
     def __init__(self, serialized: dict[str, Any]):
-        self.uuid = int(serialized["uuid"].replace("-", ""), 16).to_bytes(16, "little")
+        self.uuid = int(serialized["uuid"].replace("-", ""), 16).to_bytes(16)
         self.added = int(serialized["added"])
-        self.removed = int(serialized["added"])
         self.name: str = serialized["name"]
         self.brand: str = serialized["brand"]
         self.mrp = int(serialized["mrp"])
         self.unit: str = serialized["unit"]
 
         assert self.added > 0  # non-negative version code
-        assert self.removed >= 0  # non-negative version code or not applicable (0)
         assert self.mrp >= 0  # non-negative price or not applicable (0)
 
     def to_data(
