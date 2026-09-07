@@ -10,8 +10,9 @@ def status_data_to_paged_matrices(data: bytes) -> list[tuple[int, int, bytes]]:
     #     number, minus 1.
     # - The next byte(s) store the variable-width page number.
 
-    QR_VERSION = 31
-    QR_MAX_BYTES = 1840
+    # Reference: https://www.qrcode.com/en/about/version.html
+    QR_VERSION = 25
+    QR_MAX_BYTES = 1273
 
     out = []
     data_byte_counter = 0
