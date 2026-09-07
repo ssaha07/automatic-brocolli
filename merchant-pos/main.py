@@ -31,7 +31,7 @@ class Window(wx.Frame):
         self.innerPanel.SetSizer(self.innerBox)
 
         # QR stuff
-        catalog = Catalog(json.load(open("../playground/spec/products.json")))
+        catalog = Catalog(json.load(open("spec/products.json")))
         inventory = Inventory(catalog)
 
         self.qr_pages = status_data_to_paged_matrices(inventory.to_data())
