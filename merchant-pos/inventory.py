@@ -32,6 +32,7 @@ class Inventory:
 
         return (
             self.catalog.version.to_bytes(2, "little")
+            + spec_version.to_bytes(2, "little")
             + products_data_array
             + products_data_sentinel
         )
