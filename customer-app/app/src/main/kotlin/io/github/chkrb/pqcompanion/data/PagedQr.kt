@@ -2,11 +2,12 @@ package io.github.chkrb.pqcompanion.data
 
 import android.util.Log
 
+@OptIn(kotlin.ExperimentalUnsignedTypes::class)
 class PagedQrData {
-    private var dataPages = mutableMapOf<ULong, ByteArray>() // FIXME: .size returns Int, concerning
+    private var dataPages = mutableMapOf<ULong, UByteArray>() // FIXME: .size returns Int, concerning
     private var dataTotalPages = ULong.MAX_VALUE
 
-    fun addDataPage(page: ByteArray) {
+    fun addDataPage(page: UByteArray) {
         // Data is divided, and a header is added to it.
         // - The first byte stores the meta info:
         //   - bit 7 indicates that the page is the final page in sequence.
@@ -40,7 +41,7 @@ class PagedQrData {
 
         dataPages[headerPageNumber] =
             page.filterIndexed { index, byte -> index >= headerMetaPageBytes.toInt() + 1 }
-                .toByteArray()
+                .toUByteArray()
 
         Log.d(
             this.javaClass.name,
@@ -48,14 +49,14 @@ class PagedQrData {
         )
     }
 
-    fun assembleData(): ByteArray? {
-        var ret = byteArrayOf()
+    fun assembleDataAsRetailerStatus(catalog: Catalog): RetailerStatus? {
+        var accum = ubyteArrayOf()
 
         for (i in 0uL..<dataTotalPages) {
             if (dataPages[i] == null) return null
-            ret += dataPages[i]!!
+            accum += dataPages[i]!!
         }
 
-        return ret
+        return RetailerStatus.loadFromPosData(accum, catalog)
     }
 }

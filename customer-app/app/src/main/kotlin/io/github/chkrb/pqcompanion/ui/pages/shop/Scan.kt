@@ -31,14 +31,21 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import io.github.chkrb.pqcompanion.data.PagedQrData
+import io.github.chkrb.pqcompanion.data.RetailerStatus
 import io.github.chkrb.pqcompanion.ui.NavDestination
+import io.github.chkrb.pqcompanion.ui.viewmodels.ShopViewModel
 import java.util.concurrent.Executors
 
 @Composable
-fun ShopScanPage(navController: NavController) {
+fun ShopScanPage(navController: NavController, vm: ShopViewModel) {
+    LaunchedEffect(Unit) {
+        vm.reset()
+    }
+
     Scaffold {
         Column {
-            CameraPreview { data ->
+            CameraPreview(vm) { data ->
+                vm.processRetailerStatusData(data)
                 navController.navigate(NavDestination.SHOP_EXPLORE.route())
             }
         }
@@ -46,7 +53,7 @@ fun ShopScanPage(navController: NavController) {
 }
 
 @Composable
-internal fun CameraPreview(onDataReady: (ByteArray) -> Unit) {
+internal fun CameraPreview(vm: ShopViewModel, onDataReady: (RetailerStatus) -> Unit) {
     val context = LocalContext.current
 
     var hasPermission by remember {
@@ -65,7 +72,7 @@ internal fun CameraPreview(onDataReady: (ByteArray) -> Unit) {
     }
 
     if (hasPermission) {
-        CameraPreviewView(context, onDataReady = onDataReady)
+        CameraPreviewView(context, vm = vm, onDataReady = onDataReady)
     } else {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -85,7 +92,8 @@ internal fun CameraPreviewView(
     context: Context = LocalContext.current,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     modifier: Modifier = Modifier,
-    onDataReady: (ByteArray) -> Unit,
+    vm: ShopViewModel,
+    onDataReady: (RetailerStatus) -> Unit,
 ) {
     var pagedQrData by remember { mutableStateOf(PagedQrData()) }
     var pagedQrDataAssembled by remember { mutableStateOf(false) }
@@ -146,11 +154,12 @@ internal fun CameraPreviewView(
                                     val qrcode =
                                         barcodes.firstOrNull { it.format == Barcode.FORMAT_QR_CODE }
 
-                                    val value = qrcode?.rawBytes
+                                    val value = qrcode?.rawBytes?.toUByteArray()
                                     if (value != null && value.isNotEmpty()) {
                                         pagedQrData.addDataPage(value)
 
-                                        val assembledData = pagedQrData.assembleData()
+                                        val assembledData =
+                                            pagedQrData.assembleDataAsRetailerStatus(vm.catalog)
                                         if (assembledData != null) {
                                             pagedQrDataAssembled = true
                                             onDataReady(assembledData)
