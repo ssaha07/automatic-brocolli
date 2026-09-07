@@ -44,9 +44,6 @@ measurement is used to sell the product.
   - `added` – The database version it was added in. This is used for collision
   resolution. *(number, greater than 0)* <!-- TODO: document collision resolution -->
 
-  - `removed` – The database version it was removed in. This is used for
-  collision resolution. *(number, greater than 0, or 0 if not applicable)*
-
   - `name` – The name of the product. *(string)*
 
   - `brand` – The name of the brand. *(string)*
@@ -69,7 +66,6 @@ Example (JSON):
     {
       "uuid": "2d3268b2-a639-8813-8c88-a9919a9b0d33",
       "added": 1,
-      "removed": 0,
       "name": "Onion",
       "brand": "",
       "mrp": 0,
@@ -78,7 +74,6 @@ Example (JSON):
     {
       "uuid": "0336b16b-f4dc-4c5f-a16d-78846a2d422a",
       "added": 1,
-      "removed": 0,
       "name": "Gold Full Cream Milk (500 mL)",
       "brand": "Amul",
       "mrp": 34,

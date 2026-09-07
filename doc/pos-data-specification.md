@@ -62,11 +62,11 @@ The length is retrieved by the value in the bits, plus one.
 - **Bits 6 and 7** specify the length of the selling price of the item.
 The length is retrieved by the value in the bits, plus one.
 
-#### UUID
+#### UUID Fragement
 
 The UUID uniquely identifies the product. This is defined in the [global
 catalog](./global-catalog.md), this is a common dataset which is shared by all
-applications. *(1 to 16 bytes, little-endian, variable)*
+applications. *(1 to 16 bytes, big-endian, variable)*
 
 The UUID is 16-bytes large. To reduce the size, the specification only mentions
 enough bytes from the end which can uniquely identify the UUID. There's more
