@@ -1,4 +1,5 @@
 import ctypes
+import math
 from typing import Any, Iterable, Self
 
 class Product:
@@ -55,29 +56,23 @@ class Product:
 
         # Stock: variable from 1 byte to 4 bytes, represented in LE.
         assert stock > 0
-        if stock < (1 << 8):
-            stock_bytes_le = stock.to_bytes(1)
-        elif stock < (1 << 16):
-            stock_bytes_le = stock.to_bytes(2, "little")
-        elif stock < (1 << 32):
-            stock_bytes_le = stock.to_bytes(3, "little")
-        elif stock < (1 << 64):
-            stock_bytes_le = stock.to_bytes(4, "little")
-        else:
+        stock_num_bytes = 2 ** math.ceil(
+            math.log2(math.ceil(math.ceil(math.log2(stock + 1)) / 8))
+        )
+        if stock_num_bytes > 8:
             raise ValueError(f"quantity {stock} is too large to represent")
+
+        stock_bytes_le = stock.to_bytes(stock_num_bytes, "little")
 
         # Selling price: variable from 1 byte to 4 bytes, represented in LE.
         assert selling_price > 0
-        if selling_price < (1 << 8):
-            selling_price_bytes_le = selling_price.to_bytes(1)
-        elif selling_price < (1 << 16):
-            selling_price_bytes_le = selling_price.to_bytes(2, "little")
-        elif selling_price < (1 << 32):
-            selling_price_bytes_le = selling_price.to_bytes(3, "little")
-        elif selling_price < (1 << 64):
-            selling_price_bytes_le = selling_price.to_bytes(4, "little")
-        else:
+        selling_price_num_bytes = 2 ** math.ceil(
+            math.log2(math.ceil(math.ceil(math.log2(selling_price + 1)) / 8))
+        )
+        if selling_price_num_bytes > 8:
             raise ValueError(f"selling price {selling_price} is too large to represent")
+
+        selling_price_bytes_le = selling_price.to_bytes(selling_price_num_bytes, "little")
 
         # Header: 1 byte.
         header = 0
@@ -85,10 +80,10 @@ class Product:
         header |= unique_bytes - 1
         # bits 5:4 represent number of bytes taken up by the stock value,
         # minus 1.
-        header |= (len(stock_bytes_le) - 1) << 4
+        header |= (stock_num_bytes - 1) << 4
         # bits 7:6 represent number of bytes taken up by the selling price
         # value, minus 1.
-        header |= (len(selling_price_bytes_le) - 1) << 6
+        header |= (selling_price_num_bytes - 1) << 6
 
         assert header <= 0xff, "product data header must be precisely 1 byte"
         header_byte = header.to_bytes(1)
