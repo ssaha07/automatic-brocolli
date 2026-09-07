@@ -42,7 +42,7 @@ class Window(wx.Frame):
         self.Bind(wx.EVT_TIMER, self.cycle_qr)
 
         self.timer = wx.Timer(self)
-        self.timer.Start(1000)
+        self.timer.Start(200)
 
     def cycle_qr(self, timer_event: wx.TimerEvent):
         self.qr_bitmap_widget.Destroy()
