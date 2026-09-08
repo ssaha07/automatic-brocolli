@@ -4,10 +4,23 @@ import android.util.Log
 
 @OptIn(kotlin.ExperimentalUnsignedTypes::class)
 class PagedQrData {
-    private var dataPages = mutableMapOf<ULong, UByteArray>() // FIXME: .size returns Int, concerning
-    private var dataTotalPages = ULong.MAX_VALUE
+    // WARN: `dataPages` has a method `.size()` which reports how many elements
+    // are in the map. However, the return type is Int. Therefore the
+    // implementation cannot use this method to check how many elements are in
+    // the map because there can be a maximum of 2^16 pages.
+    //
+    // The solution is to keep track of the number of elements externally.
+    // However we require a data type which can store any value from 0 to 2^16.
+    // We can instead sneakily fit this into a ULong instead, with some compromises.
+    //
+    // For starters, we keep track of one less than the number of elements
+    // present, i.e. -1 to 2^16 - 1. The -1 value represents an empty map, thus
+    // we can only reliably check that variable if `dataPages.isEmpty()` is `true`.
+    private var dataPages = mutableMapOf<ULong, UByteArray>()
+    private var numDataPagesMinusOne = 0uL
+    private var lastDataPageNumber = ULong.MAX_VALUE
 
-    fun addDataPage(page: UByteArray) {
+    fun addDataPageAndConstruct(page: UByteArray): UByteArray? {
         // Data is divided, and a header is added to it.
         // - The first byte stores the meta info:
         //   - bit 7 indicates that the page is the final page in sequence.
@@ -21,42 +34,44 @@ class PagedQrData {
         val headerMetaPageBytes = (headerMeta and 0b00000111u) + 1u
 
         var headerPageNumber = 0uL
-        for (i in 0u..<headerMetaPageBytes) {
+        for (i in 0..<headerMetaPageBytes.toInt()) {
             headerPageNumber =
-                headerPageNumber or (page[i.toInt() + 1].toULong() shl (8 * i.toInt()))
+                headerPageNumber or (page[i + 1].toULong() shl (8 * i))
         }
 
-        if (headerPageNumber in dataPages.keys) return
+        if (headerPageNumber !in dataPages.keys) {
+            // We assume that the total number of pages is the maximum possible
+            // pages. However if the last page as indicated by the header is
+            // received, the total number of pages is changed.
+            //
+            // NOTE: This logic is very fragile, one may mix pages two different
+            // POSes, which assembles garbage data.
+            if (headerMetaLastPage && lastDataPageNumber == ULong.MAX_VALUE) {
+                Log.d(this.javaClass.name, "this is the last page, correct expecting pages")
+                lastDataPageNumber = headerPageNumber
+            }
 
-        // We assume that the total number of pages is the maximum possible
-        // pages. However if the last page as indicated by the header is
-        // received, the total number of pages is changed.
-        //
-        // NOTE: This logic is very fragile, one may mix pages two different
-        // POSes, which assembles garbage data.
-        if (headerMetaLastPage && dataTotalPages == ULong.MAX_VALUE) {
-            Log.d(this.javaClass.name, "this is the last page, correct expecting pages")
-            dataTotalPages = headerPageNumber + 1u
+            val dataPagesNotEmpty = !dataPages.isEmpty()
+            dataPages[headerPageNumber] =
+                page.filterIndexed { index, byte -> index >= headerMetaPageBytes.toInt() + 1 }
+                    .toUByteArray()
+
+            if (dataPagesNotEmpty) numDataPagesMinusOne++
+
+            Log.d(this.javaClass.name, "received page $headerPageNumber")
         }
 
-        dataPages[headerPageNumber] =
-            page.filterIndexed { index, byte -> index >= headerMetaPageBytes.toInt() + 1 }
-                .toUByteArray()
+        if (numDataPagesMinusOne == lastDataPageNumber) {
+            var accum = ubyteArrayOf()
 
-        Log.d(
-            this.javaClass.name,
-            "recv page ${headerPageNumber}; collected ${dataPages.size}, expecting $dataTotalPages}"
-        )
-    }
+            for (i in 0uL..lastDataPageNumber) {
+                if (dataPages[i] == null) return null
+                accum += dataPages[i]!!
+            }
 
-    fun assembleDataAsRetailerStatus(catalog: Catalog): RetailerStatus? {
-        var accum = ubyteArrayOf()
-
-        for (i in 0uL..<dataTotalPages) {
-            if (dataPages[i] == null) return null
-            accum += dataPages[i]!!
+            return accum
         }
 
-        return RetailerStatus.loadFromPosData(accum, catalog)
+        return null
     }
 }

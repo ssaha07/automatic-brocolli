@@ -8,11 +8,13 @@ import androidx.lifecycle.viewModelScope
 import io.github.chkrb.pqcompanion.R
 import io.github.chkrb.pqcompanion.data.Catalog
 import io.github.chkrb.pqcompanion.data.RetailerStatus
+import kotlinx.coroutines.launch
 import java.io.InputStream
 
 class ShopViewModel(globalCatalogStream: InputStream) : ViewModel() {
     var catalog: Catalog
     var retailerStatus: RetailerStatus? = null
+    var retailerStatusError: Boolean = false
 
     init {
         catalog = Catalog.loadFromJsonStream(globalCatalogStream)
@@ -20,10 +22,19 @@ class ShopViewModel(globalCatalogStream: InputStream) : ViewModel() {
 
     fun reset() {
         retailerStatus = null
+        retailerStatusError = false
     }
 
-    fun processRetailerStatusData(obj: RetailerStatus) {
-        retailerStatus = obj
+    fun processRetailerStatusData(data: UByteArray) {
+        viewModelScope.launch {
+            try {
+                retailerStatus = RetailerStatus.loadFromPosData(data, catalog)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                retailerStatus = null
+                retailerStatusError = true
+            }
+        }
     }
 }
 

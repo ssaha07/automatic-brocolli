@@ -14,6 +14,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -42,9 +43,9 @@ fun ShopScanPage(navController: NavController, vm: ShopViewModel) {
         vm.reset()
     }
 
-    Scaffold {
-        Column {
-            CameraPreview(vm) { data ->
+    Scaffold { scaffoldPadding ->
+        Column(modifier = Modifier.padding(scaffoldPadding)) {
+            CameraPreview { data ->
                 vm.processRetailerStatusData(data)
                 navController.navigate(NavDestination.SHOP_EXPLORE.route())
             }
@@ -53,7 +54,7 @@ fun ShopScanPage(navController: NavController, vm: ShopViewModel) {
 }
 
 @Composable
-internal fun CameraPreview(vm: ShopViewModel, onDataReady: (RetailerStatus) -> Unit) {
+internal fun CameraPreview(onDataReady: (UByteArray) -> Unit) {
     val context = LocalContext.current
 
     var hasPermission by remember {
@@ -72,7 +73,7 @@ internal fun CameraPreview(vm: ShopViewModel, onDataReady: (RetailerStatus) -> U
     }
 
     if (hasPermission) {
-        CameraPreviewView(context, vm = vm, onDataReady = onDataReady)
+        CameraPreviewView(context, onDataReady = onDataReady)
     } else {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -92,8 +93,7 @@ internal fun CameraPreviewView(
     context: Context = LocalContext.current,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     modifier: Modifier = Modifier,
-    vm: ShopViewModel,
-    onDataReady: (RetailerStatus) -> Unit,
+    onDataReady: (UByteArray) -> Unit,
 ) {
     var pagedQrData by remember { mutableStateOf(PagedQrData()) }
     var pagedQrDataAssembled by remember { mutableStateOf(false) }
@@ -153,16 +153,14 @@ internal fun CameraPreviewView(
                                 if (!pagedQrDataAssembled) {
                                     val qrcode =
                                         barcodes.firstOrNull { it.format == Barcode.FORMAT_QR_CODE }
-
                                     val value = qrcode?.rawBytes?.toUByteArray()
-                                    if (value != null && value.isNotEmpty()) {
-                                        pagedQrData.addDataPage(value)
 
-                                        val assembledData =
-                                            pagedQrData.assembleDataAsRetailerStatus(vm.catalog)
-                                        if (assembledData != null) {
+                                    if (!value.isNullOrEmpty()) {
+                                        val data = pagedQrData.addDataPageAndConstruct(value)
+
+                                        if (data != null) {
                                             pagedQrDataAssembled = true
-                                            onDataReady(assembledData)
+                                            onDataReady(data)
                                         }
                                     }
                                 }
