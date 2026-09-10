@@ -11,6 +11,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.mlkit.barcode)
+    implementation("androidx.compose.material:material-icons-extended")
 }
 
 plugins {
